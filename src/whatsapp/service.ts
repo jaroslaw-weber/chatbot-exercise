@@ -1,11 +1,5 @@
+/** Sends messages via the 360dialog WhatsApp API */
 export class WhatsAppService {
-  /**
-   * Sends a text message to a WhatsApp user via the 360dialog API.
-   * Requires the D360_API_KEY environment variable to be set.
-   * @param phoneNumber - The recipient's phone number in WhatsApp format
-   * @param text - The message text to send
-   * @returns A promise that resolves when the send operation completes
-   */
   async sendMessage(phoneNumber: string, text: string): Promise<void> {
     const apiKey = process.env.D360_API_KEY;
     if (!apiKey) {
@@ -13,7 +7,6 @@ export class WhatsAppService {
       return;
     }
 
-    // Send the message to the 360dialog WhatsApp API
     const response = await fetch(
       "https://waba-sandbox.360dialog.io/v1/messages",
       {

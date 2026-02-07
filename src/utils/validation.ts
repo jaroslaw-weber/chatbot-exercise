@@ -1,14 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Validates data against a Zod schema and returns a typed result.
- * Provides type-safe validation with error logging.
- * @template TSchema - The Zod schema type to validate against
- * @param data - The unknown data to validate
- * @param schema - The Zod schema to use for validation
- * @param context - Optional context string for error messages (default: 'request')
- * @returns An object with success flag and either validated data or a ZodError
- */
+/** Type-safe validation with error logging */
 export function validate<TSchema extends z.ZodTypeAny>(
   data: unknown,
   schema: TSchema,
