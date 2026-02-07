@@ -30,7 +30,6 @@ export async function parseTransaction(
     }
 
     const data = await response.json();
-    //console.log("response", data);
     const outputText = Array.isArray(data.output)
       ? data.output.join("")
       : data.output || "";
