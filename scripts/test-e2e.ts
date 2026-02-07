@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { getDatabase, addTransaction, getSummary, getTransactions } from '../src/db/index.js';
+import { addTransaction, getSummary, getTransactions } from '../src/db/index.js';
 import { parseTransaction } from '../src/ai/index.js';
 
 const TEST_PHONE = '5511999999999';
@@ -15,8 +15,6 @@ async function runTest() {
   ];
 
   console.log('📝 Test 1: Parsing transactions with Replicate AI...\n');
-  
-  const db = getDatabase();
   const results = [];
 
   for (const msg of testMessages) {
@@ -34,7 +32,7 @@ async function runTest() {
         store: parsed.store
       };
       
-      const saved = addTransaction(db, transaction);
+      const saved = await addTransaction(transaction);
       console.log(`  💾 Saved to DB with ID: ${saved.id}\n`);
       results.push(saved);
     } else {
@@ -43,14 +41,14 @@ async function runTest() {
   }
 
   console.log('\n📊 Test 2: Getting transactions from DB...\n');
-  const transactions = getTransactions(db, TEST_PHONE, 10);
+  const transactions = await getTransactions(TEST_PHONE, 10);
   console.log(`Retrieved ${transactions.length} transactions:`);
   transactions.forEach((t, i) => {
     console.log(`  ${i + 1}. ${t.item} - $${t.amount.toFixed(2)} (${t.category})`);
   });
 
   console.log('\n📈 Test 3: Getting summary...\n');
-  const summary = getSummary(db, TEST_PHONE);
+  const summary = await getSummary(TEST_PHONE);
   console.log(JSON.stringify(summary, null, 2));
 
   console.log('\n✅ All tests completed!\n');
@@ -62,8 +60,6 @@ async function runTest() {
   summary.categories.forEach(cat => {
     console.log(`    • ${cat.category}: $${cat.total.toFixed(2)} (${cat.count} items)`);
   });
-
-  db.close();
   
   console.log('\n💡 Tip: Run "clear" in WhatsApp to reset the database');
 }

@@ -1,53 +1,59 @@
 import { Context } from 'hono';
 import { FinanceService } from './service.js';
-import { WebhookBodySchema, MessageSchema } from './schemas.js';
+import { WhatsAppService } from '../whatsapp/service.js';
+import { WebhookBodySchema, MessageSchema, WebhookBody, Message } from './schemas.js';
+import { BaseController } from '../controllers/BaseController.js';
 
-export class FinanceController {
+export class FinanceController extends BaseController {
   private service: FinanceService;
-  
-  constructor(service: FinanceService) {
+  private whatsappService: WhatsAppService;
+
+  constructor(service: FinanceService, whatsappService: WhatsAppService) {
+    super();
     this.service = service;
+    this.whatsappService = whatsappService;
   }
-  
+
   async handleWebhook(c: Context): Promise<Response> {
     try {
-      const rawBody = await c.req.json();
+      const rawBody = await this.parseRequestBody(c);
       console.log('Received webhook:', JSON.stringify(rawBody, null, 2));
-      
-      const validationResult = WebhookBodySchema.safeParse(rawBody);
-      
-      if (!validationResult.success) {
-        console.error('Invalid webhook body:', validationResult.error);
-        return c.json({ error: 'Invalid request body' }, 400);
+
+      const bodyResult = this.validate(rawBody, WebhookBodySchema, 'webhook body');
+      if (!bodyResult.success) {
+        return this.errorResponse(c, 'Invalid request body', 400);
       }
-      
-      const body = validationResult.data;
-      
-      const message = body.messages?.[0];
+
+      const message = this.extractMessage(bodyResult.data);
       if (!message) {
-        return c.json({ status: 'ok' });
+        return this.successResponse(c, { status: 'ok' });
       }
-      
-      const messageResult = MessageSchema.safeParse({
-        from: message.from,
-        text: message.text?.body
-      });
-      
+
+      const messageResult = this.validate(message, MessageSchema, 'message');
       if (!messageResult.success) {
-        console.error('Invalid message:', messageResult.error);
-        return c.json({ error: 'Invalid message format' }, 400);
+        return this.errorResponse(c, 'Invalid message format', 400);
       }
-      
+
       const response = await this.service.processMessage(messageResult.data);
-      
+
       if (response) {
-        await this.service.sendWhatsAppMessage(messageResult.data.from, response);
+        await this.whatsappService.sendMessage(messageResult.data.from, response);
       }
-      
-      return c.json({ status: 'processed', response });
+
+      return this.successResponse(c, { status: 'processed', response });
     } catch (error) {
-      console.error('Webhook error:', error);
-      return c.json({ error: 'Internal error' }, 500);
+      return this.handleControllerError(c, error);
     }
+  }
+
+  private extractMessage(body: WebhookBody): Message | null {
+    const message = body.messages?.[0];
+    if (!message) {
+      return null;
+    }
+    return {
+      from: message.from,
+      text: message.text?.body
+    };
   }
 }

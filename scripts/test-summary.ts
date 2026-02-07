@@ -1,14 +1,12 @@
-import { getDatabase, getSummary, getTransactions } from "../src/db/index.js";
+import { getSummary, getTransactions } from "../src/db/index.js";
 
 const TEST_PHONE = "5511999999999";
 
 async function runTest() {
   console.log("🧪 Test: Viewing Summary\n");
 
-  const db = getDatabase();
-
   console.log("📋 Recent Transactions (last 10):\n");
-  const transactions = getTransactions(db, TEST_PHONE, 10);
+  const transactions = await getTransactions(TEST_PHONE, 10);
 
   if (transactions.length === 0) {
     console.log("  No transactions found.");
@@ -24,7 +22,7 @@ async function runTest() {
   }
 
   console.log("📊 Summary:\n");
-  const summary = getSummary(db, TEST_PHONE);
+  const summary = await getSummary(TEST_PHONE);
 
   console.log(`  Total spent: $${summary.total_spent.toFixed(2)}`);
   console.log(`  Transactions: ${summary.transactions_count}\n`);
@@ -39,8 +37,6 @@ async function runTest() {
   } else if (transactions.length > 0) {
     console.log("  No category data available");
   }
-
-  db.close();
 
   console.log("\n✅ Summary retrieved successfully!");
   console.log('\n💡 Run "bun run test:add <message>" to add a new transaction');

@@ -1,152 +1,23 @@
-import { addTransaction, getSummary, getTransactions, clearTransactions } from '../db/index.js';
-import { parseTransaction } from '../ai/index.js';
-import type { NewTransaction } from '../db/index.js';
-import { z } from 'zod';
-import { Message } from './schemas.js';
-
-const ParsedTransactionSchema = z.object({
-  amount: z.number().positive(),
-  item: z.string().min(1),
-  category: z.string().min(1),
-  store: z.string().optional()
-});
-
-export type ParsedTransaction = z.infer<typeof ParsedTransactionSchema>;
+import { Message, parseCommand } from './schemas.js';
+import { commandRegistry } from './commands/CommandRegistry.js';
 
 export class FinanceService {
   async processMessage(message: Message): Promise<string> {
-    const phoneNumber = message.from;
     const text = message.text;
-    
+
     if (!text) {
       return '';
     }
-    
-    const lowerText = text.toLowerCase();
-    
-    if (lowerText === 'summary' || lowerText === 'total') {
-      const summary = await getSummary(phoneNumber);
-      return this.formatSummary(summary);
-    } else if (lowerText === 'history' || lowerText === 'list') {
-      const transactions = await getTransactions(phoneNumber, 10);
-      return this.formatTransactionList(transactions);
-    } else if (lowerText === 'clear') {
-      await clearTransactions(phoneNumber);
-      return '🗑️ All transactions cleared';
-    } else if (lowerText === 'help') {
-      return this.formatHelp();
-    } else {
-      return await this.handleTransaction(text, phoneNumber);
-    }
-  }
-  
-  private async handleTransaction(text: string, phoneNumber: string): Promise<string> {
-    const parsed = await parseTransaction(text);
-    
-    if (!parsed) {
-      return '❌ Could not parse transaction. Try: "bought coffee for $5" or type "help"';
-    }
-    
-    const validationResult = ParsedTransactionSchema.safeParse(parsed);
-    
-    if (!validationResult.success) {
-      console.error('Invalid parsed transaction:', validationResult.error);
-      return '❌ Invalid transaction data. Please try again.';
-    }
-    
-    const validatedTransaction = validationResult.data;
-    
-    const transaction: NewTransaction = {
-      phone_number: phoneNumber,
-      amount: validatedTransaction.amount,
-      item: validatedTransaction.item,
-      category: validatedTransaction.category,
-      store: validatedTransaction.store
-    };
-    
-    await addTransaction(transaction);
-    let response = `✅ Saved: ${validatedTransaction.item} - $${validatedTransaction.amount.toFixed(2)}`;
-    if (validatedTransaction.store) {
-      response += ` at ${validatedTransaction.store}`;
-    }
-    response += ` (${validatedTransaction.category})`;
-    return response;
-  }
-  
-  async sendWhatsAppMessage(phoneNumber: string, text: string): Promise<void> {
-    const apiKey = process.env.D360_API_KEY;
-    if (!apiKey) {
-      console.error('D360_API_KEY not set');
-      return;
-    }
-    
-    const response = await fetch('https://waba-sandbox.360dialog.io/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'D360-API-KEY': apiKey
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: phoneNumber,
-        type: 'text',
-        text: {
-          body: text
-        }
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Failed to send WhatsApp message:', error);
-    }
-  }
-  
-  private formatSummary(summary: any): string {
-    if (summary.transactions_count === 0) {
-      return '📊 No transactions yet. Start by adding one!';
-    }
-    
-    let response = `📊 *Summary*\n\n`;
-    response += `💰 Total spent: $${summary.total_spent.toFixed(2)}\n`;
-    response += `📝 Transactions: ${summary.transactions_count}\n\n`;
-    
-    if (summary.categories.length > 0) {
-      response += `*Categories:*\n`;
-      for (const cat of summary.categories) {
-        response += `• ${cat.category}: $${cat.total.toFixed(2)} (${cat.count})\n`;
+
+    const command = parseCommand(text);
+
+    if (command) {
+      const commandHandler = commandRegistry.get(command);
+      if (commandHandler) {
+        return await commandHandler.execute(message);
       }
     }
-    
-    return response;
-  }
-  
-  private formatTransactionList(transactions: any[]): string {
-    if (transactions.length === 0) {
-      return '📋 No transactions yet';
-    }
-    
-    let response = '📋 *Recent Transactions*\n\n';
-    for (const t of transactions) {
-      const date = new Date(t.created_at).toLocaleDateString();
-      response += `• ${t.item} - $${t.amount.toFixed(2)} (${t.category})`;
-      if (t.store) response += ` @ ${t.store}`;
-      response += `\n  ${date}\n\n`;
-    }
-    
-    return response;
-  }
-  
-  private formatHelp(): string {
-    return `📖 *Finance Tracker Help*\n\n` +
-      `*Add transaction:*\n` +
-      `  "bought coffee for $5 at Starbucks"\n` +
-      `  "spent $20 on groceries"\n\n` +
-      `*Commands:*\n` +
-      `  "summary" - Show spending summary\n` +
-      `  "history" - Show recent transactions\n` +
-      `  "clear" - Clear all transactions\n` +
-      `  "help" - Show this message`;
+
+    return await commandRegistry.getTransactionCommand().execute(message);
   }
 }

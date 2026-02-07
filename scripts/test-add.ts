@@ -1,9 +1,7 @@
 const envPath = ".env";
 console.log("Loading .env from:", envPath);
 
-import { Database } from "bun:sqlite";
 import {
-  getDatabase,
   addTransaction,
   getTransactions,
 } from "../src/db/index.js";
@@ -29,8 +27,6 @@ async function runTest() {
 
   console.log(`✅ Parsed: ${JSON.stringify(parsed, null, 2)}\n`);
 
-  const db = getDatabase();
-
   const transaction = {
     phone_number: TEST_PHONE,
     amount: parsed.amount,
@@ -39,17 +35,14 @@ async function runTest() {
     store: parsed.store,
   };
 
-  const saved = addTransaction(db, transaction);
+  const saved = await addTransaction(transaction);
   console.log(`💾 Saved to database`);
-  console.log(`   ID: ${saved.id}`);
   console.log(`   Item: ${saved.item}`);
   console.log(`   Amount: $${saved.amount.toFixed(2)}`);
   console.log(`   Category: ${saved.category}`);
   if (saved.store) {
     console.log(`   Store: ${saved.store}`);
   }
-
-  db.close();
 
   console.log("\n✅ Transaction added successfully!");
   console.log('\n💡 Run "bun run test:summary" to view summary');
