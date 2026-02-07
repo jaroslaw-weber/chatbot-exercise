@@ -5,4 +5,8 @@ import { dbPath } from "./config.js";
 
 const sqlite = new Database(dbPath);
 
+/**
+ * Drizzle ORM database instance configured with SQLite.
+ * Provides a type-safe interface for database operations.
+ */
 export const db = drizzle(sqlite, { schema });

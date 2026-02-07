@@ -3,6 +3,10 @@ import { FinanceService } from '../finance/service.js';
 import { WhatsAppService } from '../whatsapp/service.js';
 import { FinanceController } from '../finance/controller.js';
 
+/**
+ * Hono router instance for handling webhook endpoints.
+ * Configures routes for incoming WhatsApp webhook messages.
+ */
 const webhook = new Hono();
 
 const financeService = new FinanceService();
