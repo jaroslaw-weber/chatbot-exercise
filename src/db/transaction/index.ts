@@ -3,6 +3,7 @@ import { transactions } from "./schema.js";
 import type { NewTransaction } from "./schema.js";
 import { desc, eq, sql } from "drizzle-orm";
 
+export { transactions };
 export class TransactionModel {
   static async add(transaction: NewTransaction) {
     const result = await db.insert(transactions).values(transaction).returning();

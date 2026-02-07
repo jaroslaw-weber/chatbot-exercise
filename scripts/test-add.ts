@@ -13,7 +13,7 @@ async function runTest() {
   console.log("🧪 Test: Adding Transaction\n");
 
   const testMessage =
-    process.argv[2] || "I bought coffee for $5.50 at Starbucks";
+    process.argv.slice(2).join(" ") || "I bought coffee for $5.50 at Starbucks";
 
   console.log(`Input: "${testMessage}"\n`);
 

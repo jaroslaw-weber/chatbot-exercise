@@ -11,14 +11,14 @@ export async function parseTransaction(
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-          "Prefer": "wait",
+          Prefer: "wait",
         },
         body: JSON.stringify({
           input: {
             prompt: `${PARSER_PROMPT}\n\n${text}`,
-            max_completion_tokens: 200,
+            max_completion_tokens: 600,
           },
         }),
       },
@@ -30,7 +30,10 @@ export async function parseTransaction(
     }
 
     const data = await response.json();
-    const outputText = Array.isArray(data.output) ? data.output.join("") : data.output || "";
+    //console.log("response", data);
+    const outputText = Array.isArray(data.output)
+      ? data.output.join("")
+      : data.output || "";
 
     const jsonMatch = outputText.match(/\{[^}]+\}/);
     if (!jsonMatch) {
