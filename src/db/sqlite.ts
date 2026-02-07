@@ -1,12 +1,12 @@
-import Database from 'better-sqlite3';
+import { Database } from 'bun:sqlite';
 import { Transaction, Summary, CategorySummary } from '../types/transaction.js';
 
 const dbPath = './data/finance.db';
 
-export function getDatabase(): Database.Database {
-  const db = new Database(dbPath);
+export function getDatabase(): Database {
+  const db = new Database(dbPath, { create: true });
   
-  db.exec(`
+  db.run(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone_number TEXT NOT NULL,
@@ -21,8 +21,8 @@ export function getDatabase(): Database.Database {
   return db;
 }
 
-export function addTransaction(db: Database.Database, transaction: Transaction): Transaction {
-  const stmt = db.prepare(`
+export function addTransaction(db: Database, transaction: Transaction): Transaction {
+  const stmt = db.query(`
     INSERT INTO transactions (phone_number, amount, item, category, store)
     VALUES (?, ?, ?, ?, ?)
   `);
@@ -38,8 +38,8 @@ export function addTransaction(db: Database.Database, transaction: Transaction):
   return { ...transaction, id: result.lastInsertRowid as number };
 }
 
-export function getTransactions(db: Database.Database, phoneNumber: string, limit: number = 50): Transaction[] {
-  const stmt = db.prepare(`
+export function getTransactions(db: Database, phoneNumber: string, limit: number = 50): Transaction[] {
+  const stmt = db.query(`
     SELECT * FROM transactions
     WHERE phone_number = ?
     ORDER BY created_at DESC
@@ -49,8 +49,8 @@ export function getTransactions(db: Database.Database, phoneNumber: string, limi
   return stmt.all(phoneNumber, limit) as Transaction[];
 }
 
-export function getSummary(db: Database.Database, phoneNumber: string): Summary {
-  const totalStmt = db.prepare(`
+export function getSummary(db: Database, phoneNumber: string): Summary {
+  const totalStmt = db.query(`
     SELECT SUM(amount) as total, COUNT(*) as count
     FROM transactions
     WHERE phone_number = ?
@@ -58,7 +58,7 @@ export function getSummary(db: Database.Database, phoneNumber: string): Summary 
   
   const totalResult = totalStmt.get(phoneNumber) as { total: number; count: number };
   
-  const categoryStmt = db.prepare(`
+  const categoryStmt = db.query(`
     SELECT category, SUM(amount) as total, COUNT(*) as count
     FROM transactions
     WHERE phone_number = ?
@@ -75,7 +75,7 @@ export function getSummary(db: Database.Database, phoneNumber: string): Summary 
   };
 }
 
-export function clearTransactions(db: Database.Database, phoneNumber: string): void {
-  const stmt = db.prepare('DELETE FROM transactions WHERE phone_number = ?');
+export function clearTransactions(db: Database, phoneNumber: string): void {
+  const stmt = db.query('DELETE FROM transactions WHERE phone_number = ?');
   stmt.run(phoneNumber);
 }

@@ -1,7 +1,7 @@
 const envPath = ".env";
 console.log("Loading .env from:", envPath);
 
-import Database from "better-sqlite3";
+import { Database } from "bun:sqlite";
 import {
   getDatabase,
   addTransaction,
