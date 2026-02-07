@@ -35,7 +35,7 @@ export function addTransaction(db: Database, transaction: Transaction): Transact
     transaction.store || null
   );
   
-  return { ...transaction, id: result.lastInsertRowid as number };
+  return { ...transaction, id: result as number };
 }
 
 export function getTransactions(db: Database, phoneNumber: string, limit: number = 50): Transaction[] {

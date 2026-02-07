@@ -1,4 +1,3 @@
-import Replicate from "replicate";
 import { ParsedTransaction } from "../types/transaction.js";
 
 const token = Bun.env.REPLICATE_API_TOKEN;
@@ -15,10 +14,6 @@ console.log(
   "🔑 Token loaded :",
   token ? `YES (${token.substring(0, 10)}...)` : "NO",
 );
-
-const replicate = new Replicate({
-  auth: token,
-});
 
 const PARSER_PROMPT = `You are a transaction parser. Extract transaction details from natural language text and return valid JSON.
 
@@ -37,19 +32,35 @@ export async function parseTransaction(
   text: string,
 ): Promise<ParsedTransaction | null> {
   try {
-    const output = await replicate.run("meta/llama-3.1-8b-instruct", {
-      input: {
-        prompt: `${PARSER_PROMPT}\n\n${text}`,
-        max_new_tokens: 200,
-        temperature: 0.1,
+    const response = await fetch(
+      "https://api.replicate.com/v1/models/openai/o4-mini/predictions",
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Prefer": "wait",
+        },
+        body: JSON.stringify({
+          input: {
+            prompt: `${PARSER_PROMPT}\n\n${text}`,
+            max_completion_tokens: 200,
+          },
+        }),
       },
-    });
+    );
 
-    let response = typeof output === "string" ? output : JSON.stringify(output);
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Replicate API error: ${response.status} ${error}`);
+    }
 
-    const jsonMatch = response.match(/\{[^}]+\}/);
+    const data = await response.json();
+    const outputText = Array.isArray(data.output) ? data.output.join("") : data.output || "";
+
+    const jsonMatch = outputText.match(/\{[^}]+\}/);
     if (!jsonMatch) {
-      console.error("No JSON found in response:", response);
+      console.error("No JSON found in response:", outputText);
       return null;
     }
 
