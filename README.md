@@ -8,15 +8,18 @@ A personal finance tracking chatbot built with Hono framework, Bun runtime, and 
 - 📊 **View summaries** with category breakdown: "summary"
 - 📋 **Transaction history**: "history"
 - 🗑️ **Clear data**: "clear"
-- 🤖 **AI-powered parsing** using Replicate (Llama 3)
-- 💾 **SQLite database** for persistent storage (using Bun's built-in `bun:sqlite`)
+- 🤖 **AI-powered parsing** using Replicate (OpenAI o4-mini)
+- 💾 **SQLite database** for persistent storage (using Drizzle ORM)
 - 👤 **Multi-user support** - Each phone number has separate data
+- ✅ **Input validation** using Zod schemas
 
 ## Database
 
-The application uses **bun:sqlite** for persistent data storage:
+The application uses **Drizzle ORM** with **SQLite** for persistent data storage:
 
 - **Location**: `./data/finance.db`
+- **ORM**: Drizzle ORM for type-safe database operations
+- **Migrations**: Located in `./drizzle/` directory
 - **Table**: `transactions` with fields for id, phone_number, amount, item, category, store, and created_at
 - **Features**:
   - Auto-incrementing primary key
@@ -31,7 +34,7 @@ The application uses **bun:sqlite** for persistent data storage:
 
 ## Prerequisites
 
-- Node.js 18.14.1+ or Bun 1.0.0+
+- Bun 1.0.0+ or Node.js 18.14.1+
 - WhatsApp account
 - Replicate API token ([get one here](https://replicate.com/account/api-tokens))
 
@@ -55,7 +58,7 @@ bun install
 cp .env.example .env
 ```
 
-Edit `.env` and add your credentials:
+Edit `.env` and add your credentials.
 
 ## Development
 
@@ -64,6 +67,15 @@ bun run dev
 ```
 
 Server runs on `http://localhost:3000`
+
+### Database Migrations
+
+Run database migrations to set up the schema:
+
+```bash
+bunx drizzle-kit generate
+bunx drizzle-kit migrate
+```
 
 ## Testing
 
@@ -212,27 +224,77 @@ curl -X POST http://localhost:3000/webhook \
 
 ```
 chatbot-exercise/
-├── src/
-│   ├── index.ts              # Main Hono app
-│   ├── db/
-│   │   └── sqlite.ts        # SQLite operations (using bun:sqlite)
-│   ├── lib/
-│   │   └── replicate.ts      # Replicate AI integration
-│   ├── routes/
-│   │   └── webhook.ts       # Webhook handler
-│   ├── types/
-│   │   └── transaction.ts   # TypeScript interfaces
-│   └── index.test.ts        # Unit tests
-├── scripts/
-│   ├── test-add.ts          # Add transaction test
-│   ├── test-summary.ts      # Summary test
-│   └── test-e2e.ts          # End-to-end test suite
 ├── data/
-│   └── finance.db           # SQLite database (gitignored)
-├── .env                    # Environment variables (gitignored)
-├── .env.example            # Example env file
-└── package.json
+│   └── finance.db              # SQLite database (gitignored)
+├── dist/                       # Build output
+├── drizzle/
+│   ├── 0000_organic_eternals.sql  # Database migration
+│   └── meta/
+│       ├── 0000_snapshot.json
+│       └── _journal.json
+├── node_modules/
+├── scripts/
+│   ├── test-add.ts             # Add transaction test
+│   ├── test-e2e.ts             # End-to-end test suite
+│   ├── test-summary.ts         # Summary test
+│   └── .env                    # Test environment (gitignored)
+├── src/
+│   ├── ai/                     # AI integration
+│   │   ├── config.ts           # AI configuration
+│   │   ├── index.ts            # AI module exports
+│   │   ├── parser.ts           # Transaction parsing logic
+│   │   └── prompts.ts         # AI prompts
+│   ├── db/                     # Database layer
+│   │   ├── client.ts           # Database client
+│   │   ├── config.ts           # Database configuration
+│   │   ├── index.ts            # Database module exports
+│   │   └── transaction/
+│   │       ├── index.ts        # Transaction model
+│   │       └── schema.ts       # Transaction schema
+│   ├── finance/                # Finance business logic
+│   │   ├── commands/           # Command pattern implementation
+│   │   │   ├── ClearCommand.ts
+│   │   │   ├── Command.ts      # Base command interface
+│   │   │   ├── CommandRegistry.ts
+│   │   │   ├── HelpCommand.ts
+│   │   │   ├── HistoryCommand.ts
+│   │   │   ├── SummaryCommand.ts
+│   │   │   └── TransactionCommand.ts
+│   │   ├── controller.ts       # Request controller
+│   │   ├── schemas.ts          # Finance-related schemas
+│   │   └── service.ts          # Business logic service
+│   ├── routes/
+│   │   └── webhook.ts          # Webhook route handler
+│   ├── types/
+│   │   └── transaction.ts      # TypeScript types
+│   ├── utils/
+│   │   └── validation.ts       # Validation utilities
+│   ├── whatsapp/
+│   │   └── service.ts          # WhatsApp API service
+│   ├── index.test.ts           # Unit tests
+│   └── index.ts                # Application entry point
+├── .env                        # Environment variables (gitignored)
+├── .env.example                # Example env file
+├── .gitignore
+├── LICENSE
+├── bun.lockb
+├── drizzle.config.ts           # Drizzle configuration
+├── package.json
+├── README.md
+└── tsconfig.json
 ```
+
+## Architecture Overview
+
+The application follows a layered architecture:
+
+- **Routes Layer** (`src/routes/`) - Handles HTTP requests and routing
+- **Controller Layer** (`src/finance/controller.ts`) - Manages request/response flow
+- **Service Layer** (`src/finance/service.ts`) - Contains business logic
+- **Command Pattern** (`src/finance/commands/`) - Encapsulates user commands
+- **AI Layer** (`src/ai/`) - Handles AI-powered transaction parsing
+- **Database Layer** (`src/db/`) - Manages data persistence with Drizzle ORM
+- **External Services** (`src/whatsapp/`) - Integrates with WhatsApp API
 
 ## 360dialog Sandbox API
 
@@ -251,9 +313,10 @@ chatbot-exercise/
 ## Tech Stack
 
 - **Hono** - Fast web framework
-- **Bun** - JavaScript runtime with built-in SQLite support
-- **Replicate** - AI model hosting (Llama 3)
-- **bun:sqlite** - Native SQLite database (Bun's built-in module)
+- **Bun** - JavaScript runtime
+- **Drizzle ORM** - Type-safe database toolkit
+- **Replicate** - AI model hosting (OpenAI o4-mini)
+- **Zod** - TypeScript-first schema validation
 - **TypeScript** - Type safety
 - **360dialog** - WhatsApp Business API
 
