@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { FinanceService } from '../features/finance/service.js';
-import { FinanceController } from '../features/finance/controller.js';
+import { FinanceService } from '../finance/service.js';
+import { FinanceController } from '../finance/controller.js';
 
 const webhook = new Hono();
 

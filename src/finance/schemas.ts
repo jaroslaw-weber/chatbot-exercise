@@ -19,3 +19,14 @@ export const MessageSchema = z.object({
 });
 
 export type Message = z.infer<typeof MessageSchema>;
+
+export const CommandSchema = z.enum(['summary', 'total', 'history', 'list', 'clear', 'help']);
+export type Command = z.infer<typeof CommandSchema>;
+
+export function parseCommand(text: string): Command | null {
+  const normalized = text.toLowerCase().trim();
+  if (CommandSchema.safeParse(normalized).success) {
+    return normalized as Command;
+  }
+  return null;
+}

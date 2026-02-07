@@ -12,6 +12,7 @@
   "type": "module",
   "devDependencies": {
     "bun-types": "latest",
+    "drizzle-kit": "^0.31.8",
     "tsx": "^4.21.0"
   },
   "peerDependencies": {
@@ -19,6 +20,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
+    "better-sqlite3": "^12.6.2",
+    "drizzle-orm": "^0.45.1",
     "hono": "^4.11.8",
     "zod": "^4.3.6"
   }

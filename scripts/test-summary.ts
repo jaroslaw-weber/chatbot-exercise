@@ -1,4 +1,4 @@
-import { getDatabase, getSummary, getTransactions } from "../src/db/sqlite.js";
+import { getDatabase, getSummary, getTransactions } from "../src/db/index.js";
 
 const TEST_PHONE = "5511999999999";
 

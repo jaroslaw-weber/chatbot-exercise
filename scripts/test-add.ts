@@ -6,7 +6,7 @@ import {
   getDatabase,
   addTransaction,
   getTransactions,
-} from "../src/db/sqlite.js";
+} from "../src/db/index.js";
 import { parseTransaction } from "../src/ai/index.js";
 
 const TEST_PHONE = "5511999999999";

@@ -1,6 +1,6 @@
-import { getDatabase, addTransaction, getSummary, getTransactions, clearTransactions } from '../../db/sqlite.js';
-import { parseTransaction } from '../../ai/index.js';
-import { Transaction } from '../../types/transaction.js';
+import { addTransaction, getSummary, getTransactions, clearTransactions } from '../db/index.js';
+import { parseTransaction } from '../ai/index.js';
+import type { NewTransaction } from '../db/index.js';
 import { z } from 'zod';
 import { Message } from './schemas.js';
 
@@ -22,32 +22,25 @@ export class FinanceService {
       return '';
     }
     
-    const db = getDatabase();
-    let response: string;
-    
     const lowerText = text.toLowerCase();
     
     if (lowerText === 'summary' || lowerText === 'total') {
-      const summary = getSummary(db, phoneNumber);
-      response = this.formatSummary(summary);
+      const summary = await getSummary(phoneNumber);
+      return this.formatSummary(summary);
     } else if (lowerText === 'history' || lowerText === 'list') {
-      const transactions = getTransactions(db, phoneNumber, 10);
-      response = this.formatTransactionList(transactions);
+      const transactions = await getTransactions(phoneNumber, 10);
+      return this.formatTransactionList(transactions);
     } else if (lowerText === 'clear') {
-      clearTransactions(db, phoneNumber);
-      response = '🗑️ All transactions cleared';
+      await clearTransactions(phoneNumber);
+      return '🗑️ All transactions cleared';
     } else if (lowerText === 'help') {
-      response = this.formatHelp();
+      return this.formatHelp();
     } else {
-      response = await this.handleTransaction(text, phoneNumber, db);
+      return await this.handleTransaction(text, phoneNumber);
     }
-    
-    db.close();
-    
-    return response;
   }
   
-  private async handleTransaction(text: string, phoneNumber: string, db: any): Promise<string> {
+  private async handleTransaction(text: string, phoneNumber: string): Promise<string> {
     const parsed = await parseTransaction(text);
     
     if (!parsed) {
@@ -63,7 +56,7 @@ export class FinanceService {
     
     const validatedTransaction = validationResult.data;
     
-    const transaction: Transaction = {
+    const transaction: NewTransaction = {
       phone_number: phoneNumber,
       amount: validatedTransaction.amount,
       item: validatedTransaction.item,
@@ -71,7 +64,7 @@ export class FinanceService {
       store: validatedTransaction.store
     };
     
-    addTransaction(db, transaction);
+    await addTransaction(transaction);
     let response = `✅ Saved: ${validatedTransaction.item} - $${validatedTransaction.amount.toFixed(2)}`;
     if (validatedTransaction.store) {
       response += ` at ${validatedTransaction.store}`;
