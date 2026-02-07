@@ -1,0 +1,21 @@
+{
+  "name": "chatbot-exercise",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir ./dist --target node",
+    "start": "bun run dist/index.js"
+  },
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.9",
+    "dotenv": "^17.2.4",
+    "hono": "^4.11.8"
+  }
+}
