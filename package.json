@@ -4,19 +4,25 @@
     "dev": "bun run src/index.ts",
     "build": "bun build src/index.ts --outdir ./dist --target node",
     "start": "bun run dist/index.js",
-    "test": "bun test"
+    "test": "bun test",
+    "test:add": "bun run scripts/test-add.ts",
+    "test:summary": "bun run scripts/test-summary.ts"
   },
   "module": "src/index.ts",
   "type": "module",
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "tsx": "^4.21.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
+    "better-sqlite3": "^12.6.2",
     "dotenv": "^17.2.4",
-    "hono": "^4.11.8"
+    "hono": "^4.11.8",
+    "replicate": "^1.4.0",
+    "zod": "^4.3.6"
   }
 }
