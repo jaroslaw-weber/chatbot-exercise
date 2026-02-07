@@ -7,7 +7,7 @@ import {
   addTransaction,
   getTransactions,
 } from "../src/db/sqlite.js";
-import { parseTransaction } from "../src/lib/replicate.js";
+import { parseTransaction } from "../src/ai/index.js";
 
 const TEST_PHONE = "5511999999999";
 
