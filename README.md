@@ -40,13 +40,6 @@ cp .env.example .env
 
 Edit `.env` and add your credentials:
 
-```env
-D360_API_KEY=your_api_key_here
-D360_PHONE_NUMBER=your_phone_number_here
-REPLICATE_API_KEY=your_replicate_api_key_here
-PORT=3000
-```
-
 ## Development
 
 ```bash
